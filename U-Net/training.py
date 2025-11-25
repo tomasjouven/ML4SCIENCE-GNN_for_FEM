@@ -110,12 +110,13 @@ def plot_losses(train_losses, val_losses, save_path):
     """
     Trace et sauvegarde les courbes de loss.
     """
+    best_val = min(val_losses)
     plt.figure(figsize=(10, 6))
     plt.plot(train_losses, label="Train Loss", linewidth=2)
     plt.plot(val_losses, label="Validation Loss", linewidth=2)
     plt.xlabel("Epoch", fontsize=12)
     plt.ylabel("Loss (MSE)", fontsize=12)
-    plt.title("Training & Validation Loss", fontsize=14)
+    plt.title(f"Training & Validation Loss — Best Val Loss: {best_val:.6f}", fontsize=14)
     plt.grid(alpha=0.3)
     plt.legend(fontsize=11)
     plt.yscale('log')

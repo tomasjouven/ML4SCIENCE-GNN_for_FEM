@@ -7,7 +7,7 @@ class Config:
     TRAIN_DATA_PATH = 'data/train_data.pt'
     VAL_DATA_PATH = 'data/val_data.pt'
     TRAIN_SUBSET_RATIO = 0.1  # Utiliser 20% des données d'entraînement
-    BATCH_SIZE = 1
+    BATCH_SIZE = 32
     
     # Architecture
     IN_CHANNELS = 12
@@ -17,7 +17,7 @@ class Config:
     POOL_RATIOS = 0.3
     
     # Entraînement
-    NUM_EPOCHS = 3
+    NUM_EPOCHS = 5
     LEARNING_RATE = 0.001
     WEIGHT_DECAY = 1e-5
     GRADIENT_CLIP = 1.0
@@ -28,7 +28,7 @@ class Config:
     
     # Sauvegarde
     BEST_MODEL_PATH = 'best_model.pt'
-    TRAINING_CURVE_PATH = 'training_curve.png'
+    TRAINING_CURVE_PATH = f"Curves/training_curve_R{TRAIN_SUBSET_RATIO}_B{BATCH_SIZE}_H{HIDDEN_CHANNELS}_D{DEPTH}_P{POOL_RATIOS}_E{NUM_EPOCHS}.png"
     
     # Device
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
