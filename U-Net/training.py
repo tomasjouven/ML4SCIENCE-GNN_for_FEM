@@ -3,6 +3,7 @@
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+import time
 
 
 def train_epoch(model, train_loader, optimizer, device, gradient_clip, num_train_graphs):
@@ -70,6 +71,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, config,
     best_val_loss = float('inf')
     
     for epoch in range(1, config.NUM_EPOCHS + 1):
+        start_time = time.time()
         # Entraînement
         train_loss = train_epoch(
             model, train_loader, optimizer, config.DEVICE, 
@@ -85,6 +87,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, config,
         scheduler.step(val_loss)
         
         # Sauvegarde du meilleur modèle
+        epoch_time = time.time() - start_time
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save({
@@ -93,9 +96,9 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, config,
                 'optimizer_state_dict': optimizer.state_dict(),
                 'val_loss': val_loss,
             }, config.BEST_MODEL_PATH)
-            print(f"Epoch {epoch}/{config.NUM_EPOCHS} | Train: {train_loss:.6f} | Val: {val_loss:.6f} | LR: {optimizer.param_groups[0]['lr']:.2e} ✓ Best!")
+            print(f"Epoch {epoch}/{config.NUM_EPOCHS} | Train: {train_loss:.6f} | Val: {val_loss:.6f} | Time: {epoch_time:.3f}s | LR: {optimizer.param_groups[0]['lr']:.2e} ✓ Best!")
         else:
-            print(f"Epoch {epoch}/{config.NUM_EPOCHS} | Train: {train_loss:.6f} | Val: {val_loss:.6f} | LR: {optimizer.param_groups[0]['lr']:.2e}")
+            print(f"Epoch {epoch}/{config.NUM_EPOCHS} | Train: {train_loss:.6f} | Val: {val_loss:.6f} | Time: {epoch_time:.3f}s | LR: {optimizer.param_groups[0]['lr']:.2e}")
     
     print(f"\n🎯 Best validation loss: {best_val_loss:.6f}")
     print("="*70 + "\n")

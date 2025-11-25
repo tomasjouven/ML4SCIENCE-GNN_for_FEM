@@ -6,12 +6,12 @@ class Config:
     # Données
     TRAIN_DATA_PATH = 'data/train_data.pt'
     VAL_DATA_PATH = 'data/val_data.pt'
-    TRAIN_SUBSET_RATIO = 0.2  # Utiliser 20% des données d'entraînement
+    TRAIN_SUBSET_RATIO = 0.1  # Utiliser 20% des données d'entraînement
     BATCH_SIZE = 1
     
     # Architecture
     IN_CHANNELS = 12
-    HIDDEN_CHANNELS = 16
+    HIDDEN_CHANNELS = 32
     OUT_CHANNELS = 1
     DEPTH = 1
     POOL_RATIOS = 0.3
