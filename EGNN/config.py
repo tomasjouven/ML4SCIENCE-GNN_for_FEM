@@ -7,17 +7,26 @@ class Config:
     TRAIN_DATA_PATH = 'data/train_data.pt'
     VAL_DATA_PATH = 'data/val_data.pt'
     TRAIN_SUBSET_RATIO = 0.1  # Utiliser 20% des données d'entraînement
-    BATCH_SIZE = 32
+    BATCH_SIZE = 4
     
     # Architecture
-    IN_CHANNELS = 12
-    HIDDEN_CHANNELS = 32
-    OUT_CHANNELS = 1
+    IN_NODE_FEATURES = 9
+    POS_DIM = 3
+    HIDDEN_CHANNELS = 16
+    OUT_STRESS_DIM = 1
     DEPTH = 1
     POOL_RATIOS = 0.3
+
+    LAMBDA_STRESS = 0.5    
+    
+
+    #EGNN Physics
+    NUM_NEIGHBORS = 16
+    UPDATE_COORS = False    
+    UPDATE_FEATS = True
     
     # Entraînement
-    NUM_EPOCHS = 5
+    NUM_EPOCHS = 3
     LEARNING_RATE = 0.001
     WEIGHT_DECAY = 1e-5
     GRADIENT_CLIP = 1.0

@@ -3,6 +3,7 @@
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+from torch_geometric.utils import to_dense_batch
 import time
 
 
@@ -19,8 +20,15 @@ def train_epoch(model, train_loader, optimizer, device, gradient_clip, num_train
     for batch in train_loader:
         batch = batch.to(device)
         optimizer.zero_grad()
-        out = model(batch.x, batch.edge_index, batch.batch)
-        loss = F.mse_loss(out, batch.y)
+
+        h_dense, mask = to_dense_batch(batch.x, batch.batch)
+        pos_dense, _ = to_dense_batch(batch.pos, batch.batch)
+
+        target_stress_dense, _ = to_dense_batch(batch.y, batch.batch)
+
+        pred_stress = model(h_dense, pos_dense, mask=mask)
+
+        loss = F.mse_loss(pred_stress, target_stress_dense)
         loss.backward()
         
         # Gradient clipping pour stabilité
@@ -46,8 +54,11 @@ def validate(model, val_loader, device, num_val_graphs):
     with torch.no_grad():
         for batch in val_loader:
             batch = batch.to(device)
-            out = model(batch.x, batch.edge_index, batch.batch)
-            loss = F.mse_loss(out, batch.y)
+            h_dense, mask = to_dense_batch(batch.x, batch.batch)
+            pos_dense, _ = to_dense_batch(batch.pos, batch.batch)
+            target_stress_dense, _ = to_dense_batch(batch.y, batch.batch)
+            pred_stress = model(h_dense, pos_dense, mask=mask)
+            loss = F.mse_loss(pred_stress, target_stress_dense)
             val_loss += loss.item() * batch.num_graphs
     
     val_loss /= num_val_graphs

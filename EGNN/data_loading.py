@@ -39,6 +39,10 @@ def get_graph_from_tuple(data, slices, idx):
         else:
             data_dict[key] = data[key][start:end]
     
+    #Extract the position from the features
+    data_dict['pos'] = data_dict['x'][:, :3]
+    data_dict['x'] = data_dict['x'][:, 3:]
+
     return Data(**data_dict)
 
 

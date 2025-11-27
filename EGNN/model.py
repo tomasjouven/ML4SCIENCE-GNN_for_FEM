@@ -1,32 +1,42 @@
 """Définition de l'architecture du modèle."""
 
-from torch_geometric.nn import GraphUNet
+import torch
+import torch.nn as nn
+from egnn_pytorch import EGNN
 
+
+class EGNNModel(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.embedding = nn.Linear(config.IN_NODE_FEATURES, config.HIDDEN_CHANNELS)
+
+        self.stress_head = nn.Sequential(
+            nn.Linear(config.HIDDEN_CHANNELS, config.HIDDEN_CHANNELS),
+            nn.SiLU(), 
+            nn.Linear(config.HIDDEN_CHANNELS, config.OUT_STRESS_DIM)
+        )
+        
+        self.layers = nn.ModuleList([])
+        for _ in range(config.DEPTH):
+            self.layers.append(EGNN(
+                dim=config.HIDDEN_CHANNELS,      # Size of h
+                m_dim=config.HIDDEN_CHANNELS,    # Size of message
+                num_nearest_neighbors=config.NUM_NEIGHBORS,
+                update_coors=config.UPDATE_COORS, # Critical for deformation
+                update_feats=config.UPDATE_FEATS,
+                norm_coors=True,               
+                soft_edges=True                
+            ))
+
+    def forward(self, h, pos, mask=None):
+            h = self.embedding(h)
+
+            for layer in self.layers:
+                h, _ = layer(h, pos, mask=mask)
+
+            pred_stress = self.stress_head(h) 
+            return pred_stress
 
 def create_model(config):
-    """
-    Crée le modèle GraphUNet.
-    
-    Args:
-        config: Objet de configuration
-        
-    Returns:
-        model: Modèle GraphUNet
-    """
-    model = GraphUNet(
-        in_channels=config.IN_CHANNELS,
-        hidden_channels=config.HIDDEN_CHANNELS,
-        out_channels=config.OUT_CHANNELS,
-        depth=config.DEPTH,
-        pool_ratios=config.POOL_RATIOS,
-        sum_res=True,
-        act='relu'
-    )
-    
-    model = model.to(config.DEVICE)
-    
-    num_params = sum(p.numel() for p in model.parameters())
-    print(f"Model parameters: {num_params:,}")
-    print(f"Device: {config.DEVICE}\n")
-    
-    return model
+    model = EGNNModel(config)
+    return model.to(config.DEVICE)
