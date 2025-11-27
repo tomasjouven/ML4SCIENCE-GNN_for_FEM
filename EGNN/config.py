@@ -17,7 +17,7 @@ class Config:
     POOL_RATIOS = 0.3
     
     # Entraînement
-    NUM_EPOCHS = 30
+    NUM_EPOCHS = 5
     LEARNING_RATE = 0.001
     WEIGHT_DECAY = 1e-5
     GRADIENT_CLIP = 1.0
