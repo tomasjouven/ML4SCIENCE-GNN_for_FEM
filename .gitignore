@@ -1,3 +1,4 @@
 U-Net/data/train_data.pt
 *.pt
 U-Net/data.zip
+*.pyc
