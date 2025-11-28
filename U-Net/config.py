@@ -6,25 +6,21 @@ class Config:
     # Données
     TRAIN_DATA_PATH = 'data/train_data.pt'
     VAL_DATA_PATH = 'data/val_data.pt'
-    TRAIN_SUBSET_RATIO = 0.2  # Utiliser 20% des données d'entraînement
+    TRAIN_SUBSET_RATIO = 0.01  # Utiliser 20% des données d'entraînement
     BATCH_SIZE = 1
     
     # Architecture
     IN_CHANNELS = 12
-    HIDDEN_CHANNELS = 16
+    HIDDEN_CHANNELS = 32
     OUT_CHANNELS = 1
-    DEPTH = 1
-    POOL_RATIOS = 0.3
+    DEPTH = 3
+    POOL_RATIOS = 0.5
     
     # Entraînement
-    NUM_EPOCHS = 3
+    NUM_EPOCHS = 10
     LEARNING_RATE = 0.001
-    WEIGHT_DECAY = 1e-5
+    WEIGHT_DECAY = 0 #regu
     GRADIENT_CLIP = 1.0
-    
-    # Scheduler
-    SCHEDULER_FACTOR = 0.5
-    SCHEDULER_PATIENCE = 5
     
     # Sauvegarde
     BEST_MODEL_PATH = 'best_model.pt'

@@ -1,16 +1,26 @@
-"""Boucle d'entraînement et validation."""
+"""Boucle d'entraînement et validation avec calcul des métriques du papier (R2 percentiles)."""
 
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 
 
 def train_epoch(model, train_loader, optimizer, device, gradient_clip, num_train_graphs):
     """
     Effectue une epoch d'entraînement.
     
+    Args:
+        model: Le modèle GraphUNet.
+        train_loader: DataLoader des données d'entraînement.
+        optimizer: Optimiseur.
+        device: Appareil ('cuda' ou 'cpu').
+        gradient_clip: Valeur pour le clipping de gradient.
+        num_train_graphs: Nombre total de graphes d'entraînement.
+        
     Returns:
-        train_loss: Loss moyenne sur l'epoch
+        train_loss: Loss moyenne sur l'epoch (Huber).
     """
     model.train()
     train_loss = 0
@@ -19,10 +29,11 @@ def train_epoch(model, train_loader, optimizer, device, gradient_clip, num_train
         batch = batch.to(device)
         optimizer.zero_grad()
         out = model(batch.x, batch.edge_index, batch.batch)
-        loss = F.mse_loss(out, batch.y)
+        # [cite_start]Utilisation de la Huber Loss (delta=0.5) comme objectif d'optimisation [cite: 304]
+        loss = F.huber_loss(out, batch.y, delta=0.5)
         loss.backward()
         
-        # Gradient clipping pour stabilité
+        # Clipping de gradient
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=gradient_clip)
         
         optimizer.step()
@@ -34,26 +45,72 @@ def train_epoch(model, train_loader, optimizer, device, gradient_clip, num_train
 
 def validate(model, val_loader, device, num_val_graphs):
     """
-    Effectue la validation.
+    Effectue la validation et calcule la loss Huber ainsi que les métriques d'évaluation.
+    
+    [cite_start]Le R2 est calculé par graphe pour obtenir les percentiles (90, 50, 10 PCT)[cite: 309].
+    [cite_start]Le RMSE et le MAE sont calculés globalement[cite: 310].
     
     Returns:
-        val_loss: Loss moyenne sur la validation
+        val_loss (float): Loss moyenne sur la validation (Huber).
+        metrics (dict): R2_90PCT, R2_50PCT, R2_10PCT, RMSE, MAE.
     """
     model.eval()
     val_loss = 0
+    all_graph_r2s = [] # Pour les percentiles (par géométrie)
+    all_predictions_global = [] # Pour RMSE/MAE (global)
+    all_targets_global = [] # Pour RMSE/MAE (global)
     
     with torch.no_grad():
         for batch in val_loader:
             batch = batch.to(device)
             out = model(batch.x, batch.edge_index, batch.batch)
-            loss = F.mse_loss(out, batch.y)
+            
+            # [cite_start]Loss Huber pour la sélection du meilleur modèle [cite: 305]
+            loss = F.huber_loss(out, batch.y, delta=0.5)
             val_loss += loss.item() * batch.num_graphs
+            
+            # Conversion pour calcul des métriques
+            preds_np = out.view(-1).cpu().numpy()
+            targets_np = batch.y.view(-1).cpu().numpy()
+            
+            # R2 par Graphe (nécessite BATCH_SIZE=1 pour cette implémentation)
+            r2_score_graph = r2_score(targets_np, preds_np)
+            all_graph_r2s.append(r2_score_graph)
+
+            # Collecte pour métriques globales
+            all_predictions_global.append(out.view(-1))
+            all_targets_global.append(batch.y.view(-1))
     
     val_loss /= num_val_graphs
-    return val_loss
+    
+    # --- 1. Calcul des R2 Percentiles (sur la distribution des R2 par graphe) ---
+    all_graph_r2s = np.array(all_graph_r2s)
+    
+    r2_90pct = np.percentile(all_graph_r2s, 90)
+    r2_50pct = np.percentile(all_graph_r2s, 50)
+    r2_10pct = np.percentile(all_graph_r2s, 10)
+    
+    # --- 2. Calcul des Métriques Globales (RMSE, MAE) ---
+    final_predictions_global = torch.cat(all_predictions_global).cpu().numpy()
+    final_targets_global = torch.cat(all_targets_global).cpu().numpy()
+    
+    # [cite_start]RMSE [cite: 306]
+    rmse = np.sqrt(mean_squared_error(final_targets_global, final_predictions_global))
+    # [cite_start]MAE [cite: 306]
+    mae = mean_absolute_error(final_targets_global, final_predictions_global)
+    
+    metrics = {
+        'R2_90PCT': r2_90pct,
+        'R2_50PCT': r2_50pct,
+        'R2_10PCT': r2_10pct,
+        'RMSE': rmse,
+        'MAE': mae
+    }
+    
+    return val_loss, metrics
 
 
-def train_model(model, train_loader, val_loader, optimizer, scheduler, config, 
+def train_model(model, train_loader, val_loader, optimizer, config, 
                 num_train_graphs, num_val_graphs):
     """
     Boucle d'entraînement complète.
@@ -78,13 +135,16 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, config,
         train_losses.append(train_loss)
         
         # Validation
-        val_loss = validate(model, val_loader, config.DEVICE, num_val_graphs)
+        val_loss, metrics = validate(model, val_loader, config.DEVICE, num_val_graphs)
         val_losses.append(val_loss)
         
-        # Scheduler step
-        scheduler.step(val_loss)
+        # Affichage des métriques (R2 percentiles et RMSE/MAE globaux)
+        metric_display = (
+            f" | R2_90: {metrics['R2_90PCT']:.4f} | R2_50: {metrics['R2_50PCT']:.4f} | R2_10: {metrics['R2_10PCT']:.4f}"
+            f" | RMSE: {metrics['RMSE']:.4f} | MAE: {metrics['MAE']:.4f}"
+        )
         
-        # Sauvegarde du meilleur modèle
+        # [cite_start]Sauvegarde du meilleur modèle (basée sur la val_loss Huber minimum) [cite: 305]
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save({
@@ -93,11 +153,11 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, config,
                 'optimizer_state_dict': optimizer.state_dict(),
                 'val_loss': val_loss,
             }, config.BEST_MODEL_PATH)
-            print(f"Epoch {epoch}/{config.NUM_EPOCHS} | Train: {train_loss:.6f} | Val: {val_loss:.6f} | LR: {optimizer.param_groups[0]['lr']:.2e} ✓ Best!")
+            print(f"Epoch {epoch}/{config.NUM_EPOCHS} | Train Loss (Huber): {train_loss:.6f} | Val Loss (Huber): {val_loss:.6f} | LR: {optimizer.param_groups[0]['lr']:.2e} {metric_display} ✓ Best!")
         else:
-            print(f"Epoch {epoch}/{config.NUM_EPOCHS} | Train: {train_loss:.6f} | Val: {val_loss:.6f} | LR: {optimizer.param_groups[0]['lr']:.2e}")
+            print(f"Epoch {epoch}/{config.NUM_EPOCHS} | Train Loss (Huber): {train_loss:.6f} | Val Loss (Huber): {val_loss:.6f} | LR: {optimizer.param_groups[0]['lr']:.2e} {metric_display}")
     
-    print(f"\n🎯 Best validation loss: {best_val_loss:.6f}")
+    print(f"\n🎯 Best validation loss (Huber): {best_val_loss:.6f}")
     print("="*70 + "\n")
     
     return train_losses, val_losses, best_val_loss
@@ -105,13 +165,13 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, config,
 
 def plot_losses(train_losses, val_losses, save_path):
     """
-    Trace et sauvegarde les courbes de loss.
+    Trace et sauvegarde les courbes de loss (Huber).
     """
     plt.figure(figsize=(10, 6))
-    plt.plot(train_losses, label="Train Loss", linewidth=2)
-    plt.plot(val_losses, label="Validation Loss", linewidth=2)
+    plt.plot(train_losses, label="Train Loss (Huber)", linewidth=2)
+    plt.plot(val_losses, label="Validation Loss (Huber)", linewidth=2)
     plt.xlabel("Epoch", fontsize=12)
-    plt.ylabel("Loss (MSE)", fontsize=12)
+    plt.ylabel("Loss (Huber)", fontsize=12)
     plt.title("Training & Validation Loss", fontsize=14)
     plt.grid(alpha=0.3)
     plt.legend(fontsize=11)
