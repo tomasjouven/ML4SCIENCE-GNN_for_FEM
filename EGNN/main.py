@@ -27,19 +27,17 @@ def main():
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, 
         mode='min', 
-        factor=config.SCHEDULER_FACTOR, 
-        patience=config.SCHEDULER_PATIENCE, 
         verbose=True
     )
     
     # Entraînement
-    train_losses, val_losses, best_val_loss = train_model(
-        model, train_loader, val_loader, optimizer, scheduler, config,
+    train_losses, val_losses, metrics = train_model(
+        model, train_loader, val_loader, optimizer, config,
         num_train_graphs, num_val_graphs
     )
     
     # Visualisation
-    plot_losses(train_losses, val_losses, config.TRAINING_CURVE_PATH)
+    plot_losses(train_losses, val_losses, metrics, config.TRAINING_CURVE_PATH)
 
 
 if __name__ == "__main__":

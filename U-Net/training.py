@@ -127,7 +127,6 @@ def train_model(model, train_loader, val_loader, optimizer, config,
     best_val_loss = float('inf')
     
     for epoch in range(1, config.NUM_EPOCHS + 1):
-        start_time = time.time()
         # Entraînement
         train_loss = train_epoch(
             model, train_loader, optimizer, config.DEVICE, 

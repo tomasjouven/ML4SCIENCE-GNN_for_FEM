@@ -19,10 +19,10 @@ class EGNNModel(nn.Module):
         self.layers = nn.ModuleList([])
         for _ in range(config.DEPTH):
             self.layers.append(EGNN(
-                dim=config.HIDDEN_CHANNELS,      # Size of h
-                m_dim=config.HIDDEN_CHANNELS,    # Size of message
+                dim=config.HIDDEN_CHANNELS,
+                m_dim=config.HIDDEN_CHANNELS,
                 num_nearest_neighbors=config.NUM_NEIGHBORS,
-                update_coors=config.UPDATE_COORS, # Critical for deformation
+                update_coors=config.UPDATE_COORS, 
                 update_feats=config.UPDATE_FEATS,
                 norm_coors=True,               
                 soft_edges=True                

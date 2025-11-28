@@ -7,7 +7,7 @@ class Config:
     TRAIN_DATA_PATH = 'data/train_data.pt'
     VAL_DATA_PATH = 'data/val_data.pt'
     TRAIN_SUBSET_RATIO = 0.1  # Utiliser 20% des données d'entraînement
-    BATCH_SIZE = 4
+    BATCH_SIZE = 1
     
     # Architecture
     IN_NODE_FEATURES = 9
@@ -27,10 +27,6 @@ class Config:
     LEARNING_RATE = 0.001
     WEIGHT_DECAY = 1e-5
     GRADIENT_CLIP = 1.0
-    
-    # Scheduler
-    SCHEDULER_FACTOR = 0.5
-    SCHEDULER_PATIENCE = 5
     
     # Sauvegarde
     BEST_MODEL_PATH = 'best_model.pt'
