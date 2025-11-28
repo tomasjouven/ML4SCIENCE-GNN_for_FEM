@@ -11,14 +11,11 @@ class Config:
     
     # Architecture
     IN_NODE_FEATURES = 9
-    POS_DIM = 3
     HIDDEN_CHANNELS = 16
     OUT_STRESS_DIM = 1
     DEPTH = 1
-    POOL_RATIOS = 0.3
 
     LAMBDA_STRESS = 0.5    
-    
 
     #EGNN Physics
     NUM_NEIGHBORS = 16
@@ -37,7 +34,7 @@ class Config:
     
     # Sauvegarde
     BEST_MODEL_PATH = 'best_model.pt'
-    TRAINING_CURVE_PATH = f"Curves/training_curve_R{TRAIN_SUBSET_RATIO}_B{BATCH_SIZE}_H{HIDDEN_CHANNELS}_D{DEPTH}_P{POOL_RATIOS}_E{NUM_EPOCHS}.png"
+    TRAINING_CURVE_PATH = f"Curves/training_curve_R{TRAIN_SUBSET_RATIO}_B{BATCH_SIZE}_H{HIDDEN_CHANNELS}_D{DEPTH}_E{NUM_EPOCHS}.png"
     
     # Device
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

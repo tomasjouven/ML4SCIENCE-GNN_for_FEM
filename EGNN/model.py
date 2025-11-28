@@ -12,7 +12,7 @@ class EGNNModel(nn.Module):
 
         self.stress_head = nn.Sequential(
             nn.Linear(config.HIDDEN_CHANNELS, config.HIDDEN_CHANNELS),
-            nn.SiLU(), 
+            nn.ReLU(), 
             nn.Linear(config.HIDDEN_CHANNELS, config.OUT_STRESS_DIM)
         )
         
