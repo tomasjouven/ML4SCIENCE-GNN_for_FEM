@@ -127,6 +127,7 @@ def train_model(model, train_loader, val_loader, optimizer, config,
     best_val_loss = float('inf')
     
     for epoch in range(1, config.NUM_EPOCHS + 1):
+        start_time = time.time()
         # Entraînement
         train_loss = train_epoch(
             model, train_loader, optimizer, config.DEVICE, 
@@ -167,6 +168,7 @@ def plot_losses(train_losses, val_losses, save_path):
     """
     Trace et sauvegarde les courbes de loss (Huber).
     """
+    best_val = min(val_losses)
     plt.figure(figsize=(10, 6))
     plt.plot(train_losses, label="Train Loss (Huber)", linewidth=2)
     plt.plot(val_losses, label="Validation Loss (Huber)", linewidth=2)

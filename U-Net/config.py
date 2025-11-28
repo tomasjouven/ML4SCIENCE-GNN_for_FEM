@@ -24,7 +24,7 @@ class Config:
     
     # Sauvegarde
     BEST_MODEL_PATH = 'best_model.pt'
-    TRAINING_CURVE_PATH = 'training_curve.png'
+    TRAINING_CURVE_PATH = f"Curves/training_curve_R{TRAIN_SUBSET_RATIO}_B{BATCH_SIZE}_H{HIDDEN_CHANNELS}_D{DEPTH}_P{POOL_RATIOS}_E{NUM_EPOCHS}.png"
     
     # Device
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
