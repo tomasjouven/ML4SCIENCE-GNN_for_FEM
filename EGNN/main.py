@@ -24,11 +24,6 @@ def main():
         lr=config.LEARNING_RATE, 
         weight_decay=config.WEIGHT_DECAY
     )
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, 
-        mode='min', 
-        verbose=True
-    )
     
     # Entraînement
     train_losses, val_losses, metrics = train_model(
